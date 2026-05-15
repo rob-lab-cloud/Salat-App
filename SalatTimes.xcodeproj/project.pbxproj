@@ -1,0 +1,378 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		624561572F51BB010025BDD6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 624561562F51BB010025BDD6 /* Assets.xcassets */; };
+		A1000001 /* SalatTimesApp.swift in Sources */        = {isa = PBXBuildFile; fileRef = A2000001; };
+		A1000002 /* ContentView.swift in Sources */          = {isa = PBXBuildFile; fileRef = A2000002; };
+		A1000003 /* PrayerTimesCalculator.swift in Sources */= {isa = PBXBuildFile; fileRef = A2000003; };
+		A1000004 /* PrayerTimesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004; };
+		A1000005 /* QiblaCompassView.swift in Sources */     = {isa = PBXBuildFile; fileRef = A2000006; };
+		A1000006 /* NotificationManager.swift in Sources */  = {isa = PBXBuildFile; fileRef = A2000007; };
+		A1000007 /* SalatTimesWidget.swift in Sources */     = {isa = PBXBuildFile; fileRef = A2000008; };
+		A1000008 /* WidgetKit.framework in Frameworks */     = {isa = PBXBuildFile; fileRef = A2000009; };
+		A1000009 /* SwiftUI.framework in Frameworks */       = {isa = PBXBuildFile; fileRef = A2000010; };
+		A1000010 /* Assets.xcassets in Resources (Widget) */ = {isa = PBXBuildFile; fileRef = 624561562F51BB010025BDD6; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		624561562F51BB010025BDD6 /* Assets.xcassets */           = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A2000001 /* SalatTimesApp.swift */        = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalatTimesApp.swift; sourceTree = "<group>"; };
+		A2000002 /* ContentView.swift */          = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A2000003 /* PrayerTimesCalculator.swift */= {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerTimesCalculator.swift; sourceTree = "<group>"; };
+		A2000004 /* PrayerTimesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerTimesViewModel.swift; sourceTree = "<group>"; };
+		A2000005 /* Info.plist */                 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A2000006 /* QiblaCompassView.swift */     = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QiblaCompassView.swift; sourceTree = "<group>"; };
+		A2000007 /* NotificationManager.swift */  = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		A2000008 /* SalatTimesWidget.swift */     = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalatTimesWidget.swift; sourceTree = "<group>"; };
+		A2000009 /* WidgetKit.framework */        = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; sourceTree = SDKROOT; };
+		A2000010 /* SwiftUI.framework */          = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; sourceTree = SDKROOT; };
+		A3000001 /* SalatTimes.app */             = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SalatTimes.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A3000002 /* SalatTimesWidget.appex */     = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SalatTimesWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A4000001 /* Frameworks (App) */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4000002 /* Frameworks (Widget) */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000008 /* WidgetKit.framework in Frameworks */,
+				A1000009 /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A5000001 = {
+			isa = PBXGroup;
+			children = (
+				A5000002 /* SalatTimes */,
+				A5000004 /* SalatTimesWidget */,
+				A5000003 /* Products */,
+				A5000005 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		A5000002 /* SalatTimes */ = {
+			isa = PBXGroup;
+			children = (
+				624561562F51BB010025BDD6 /* Assets.xcassets */,
+				A2000001 /* SalatTimesApp.swift */,
+				A2000002 /* ContentView.swift */,
+				A2000003 /* PrayerTimesCalculator.swift */,
+				A2000004 /* PrayerTimesViewModel.swift */,
+				A2000006 /* QiblaCompassView.swift */,
+				A2000007 /* NotificationManager.swift */,
+				A2000005 /* Info.plist */,
+			);
+			path = SalatTimes;
+			sourceTree = "<group>";
+		};
+		A5000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A3000001 /* SalatTimes.app */,
+				A3000002 /* SalatTimesWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A5000004 /* SalatTimesWidget */ = {
+			isa = PBXGroup;
+			children = (
+				A2000008 /* SalatTimesWidget.swift */,
+			);
+			path = SalatTimesWidget;
+			sourceTree = "<group>";
+		};
+		A5000005 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A2000009 /* WidgetKit.framework */,
+				A2000010 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A6000001 /* SalatTimes */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A7000001;
+			buildPhases = (
+				A8000001 /* Sources */,
+				A4000001 /* Frameworks */,
+				A9000001 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = (
+				ADEP0001 /* Widget dependency */,
+			);
+			name = SalatTimes;
+			productName = SalatTimes;
+			productReference = A3000001;
+			productType = "com.apple.product-type.application";
+		};
+		A6000002 /* SalatTimesWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A7000002;
+			buildPhases = (
+				A8000002 /* Sources */,
+				A4000002 /* Frameworks */,
+				A9000002 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = SalatTimesWidget;
+			productName = SalatTimesWidget;
+			productReference = A3000002;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		ADEP0002 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA000001;
+			proxyType = 1;
+			remoteGlobalIDString = A6000002;
+			remoteInfo = SalatTimesWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		ADEP0001 = {
+			isa = PBXTargetDependency;
+			target = A6000002;
+			targetProxy = ADEP0002;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXProject section */
+		AA000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A6000001 = { CreatedOnToolsVersion = 15.0; };
+					A6000002 = { CreatedOnToolsVersion = 15.0; };
+				};
+			};
+			buildConfigurationList = AB000001;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = A5000001;
+			productRefGroup = A5000003;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A6000001 /* SalatTimes */,
+				A6000002 /* SalatTimesWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A9000001 /* Resources (App) */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				624561572F51BB010025BDD6 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9000002 /* Resources (Widget) */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A8000001 /* Sources (App) */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000001 /* SalatTimesApp.swift in Sources */,
+				A1000002 /* ContentView.swift in Sources */,
+				A1000003 /* PrayerTimesCalculator.swift in Sources */,
+				A1000004 /* PrayerTimesViewModel.swift in Sources */,
+				A1000005 /* QiblaCompassView.swift in Sources */,
+				A1000006 /* NotificationManager.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A8000002 /* Sources (Widget) */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000007 /* SalatTimesWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AC000001 /* Debug (Project) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("DEBUG=1", "$(inherited)");
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AC000002 /* Release (Project) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AC000003 /* Debug (App) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SalatTimes/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.salatimes.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AC000004 /* Release (App) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SalatTimes/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.salatimes.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AC000005 /* Debug (Widget) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Salat Times Widget";
+				INFOPLIST_KEY_NSExtensionAttributes_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks");
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.salatimes.app.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AC000006 /* Release (Widget) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Salat Times Widget";
+				INFOPLIST_KEY_NSExtensionAttributes_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks");
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.salatimes.app.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A7000001 /* Build configuration list for PBXNativeTarget "SalatTimes" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (AC000003 /* Debug */, AC000004 /* Release */);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A7000002 /* Build configuration list for PBXNativeTarget "SalatTimesWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (AC000005 /* Debug */, AC000006 /* Release */);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB000001 /* Build configuration list for PBXProject "SalatTimes" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (AC000001 /* Debug */, AC000002 /* Release */);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = AA000001 /* Project object */;
+}
