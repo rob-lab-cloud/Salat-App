@@ -68,16 +68,23 @@ struct PrayerTime: Identifiable {
     let id = UUID()
     let prayer: Prayer
     let time: Date
+    var timeZone: TimeZone = .current
     
     var isNext: Bool = false
     var isCurrent: Bool = false
     
     var timeString: String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "h:mm a"
-        fmt.locale = Locale(identifier: "en_US_POSIX")
+        let fmt = Self.cachedFormatter
+        fmt.timeZone = timeZone
         return fmt.string(from: time)
     }
+
+    private static let cachedFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
 }
 
 // MARK: - Calculator
@@ -87,17 +94,18 @@ class PrayerTimesCalculator {
         for date: Date = Date(),
         coordinate: CLLocationCoordinate2D,
         method: CalculationMethod = .muslimWorldLeague,
-        timeZoneOffset: Double? = nil
+        timeZone: TimeZone = .current
     ) -> [PrayerTime] {
         
-        // tz = UTC offset in hours for the device's current timezone
-        let tz = timeZoneOffset ?? Double(TimeZone.current.secondsFromGMT()) / 3600.0
+        // tz = UTC offset in hours for the LOCATION's timezone (not necessarily the device's)
+        let tz = Double(timeZone.secondsFromGMT(for: date)) / 3600.0
         let lat = coordinate.latitude
         let lng = coordinate.longitude
         
-        // Extract LOCAL date components so calculations use the user's calendar day
+        // Extract date components in the LOCATION's timezone so calculations use the
+        // location's calendar day rather than the device's.
         var localCal = Calendar(identifier: .gregorian)
-        localCal.timeZone = TimeZone.current
+        localCal.timeZone = timeZone
         let year  = localCal.component(.year,  from: date)
         let month = localCal.component(.month, from: date)
         let day   = localCal.component(.day,   from: date)
@@ -121,7 +129,11 @@ class PrayerTimesCalculator {
         ]
         
         return pairs.map { (prayer, hours) in
-            PrayerTime(prayer: prayer, time: hoursToDate(localHours: hours, localYear: year, localMonth: month, localDay: day))
+            PrayerTime(
+                prayer: prayer,
+                time: hoursToDate(localHours: hours, localYear: year, localMonth: month, localDay: day, timeZone: timeZone),
+                timeZone: timeZone
+            )
         }
     }
     
@@ -190,19 +202,18 @@ class PrayerTimesCalculator {
     // We build the date by taking UTC midnight of the LOCAL calendar day, then
     // subtracting the UTC offset and adding the hours, which lands us at the
     // correct wall-clock time in the local timezone.
-    private static func hoursToDate(localHours: Double, localYear: Int, localMonth: Int, localDay: Int) -> Date {
+    private static func hoursToDate(localHours: Double, localYear: Int, localMonth: Int, localDay: Int, timeZone: TimeZone) -> Date {
         // Build UTC midnight for this local date
         var utcCal = Calendar(identifier: .gregorian)
-        utcCal.timeZone = TimeZone(identifier: "UTC")!
+        utcCal.timeZone = TimeZone(identifier: "UTC") ?? .gmt
         var c = DateComponents()
         c.year = localYear; c.month = localMonth; c.day = localDay
         c.hour = 0; c.minute = 0; c.second = 0
         guard let utcMidnight = utcCal.date(from: c) else { return Date() }
         
-        // localHours is local-time hours since midnight, but we're starting from UTC midnight.
-        // So we need to subtract the UTC offset to get back to UTC, then the OS will
-        // display it as local time correctly.
-        let tzOffsetHours = Double(TimeZone.current.secondsFromGMT()) / 3600.0
+        // localHours is wall-clock hours in the location's timezone since its midnight.
+        // Subtract the location's UTC offset to get the absolute UTC instant.
+        let tzOffsetHours = Double(timeZone.secondsFromGMT(for: utcMidnight)) / 3600.0
         let utcHours = localHours - tzOffsetHours
         return utcMidnight.addingTimeInterval(utcHours * 3600.0)
     }

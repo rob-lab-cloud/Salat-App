@@ -1,50 +1,63 @@
 import SwiftUI
 import CoreLocation
+import UIKit
 
 struct ContentView: View {
     @StateObject private var viewModel = PrayerTimesViewModel()
     @State private var showSettings = false
 
+    // Target distance from screen top to the header. Looks identical on iOS 17/18/26
+    // regardless of how the system reports its safe-area inset.
+    private static let targetTopInset: CGFloat = 20
+
+    // Read the actual system safe-area top from UIKit's key window. SwiftUI's
+    // GeometryReader/safeAreaInsets gives inconsistent values depending on parent
+    // hierarchy; UIKit's window-level inset is the source of truth.
+    private var systemSafeAreaTop: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }?.safeAreaInsets.top ?? 0
+    }
+
     var body: some View {
-        ZStack {
-            BackgroundView()
+        // Allow negative values so we can pull content above the system safe-area
+        // boundary on devices with a large Dynamic Island inset.
+        let topPadding = Self.targetTopInset - systemSafeAreaTop
 
-            VStack(spacing: 0) {
-                HeaderView(
-                    locationName: viewModel.locationName,
-                    date: viewModel.currentDate,
-                    showSettings: $showSettings
+        VStack(spacing: 20) {
+            HeaderView(
+                locationName: viewModel.locationName,
+                date: viewModel.currentDate,
+                showSettings: $showSettings
+            )
+
+            if viewModel.locationStatus == .denied {
+                LocationDeniedView()
+            } else if let next = viewModel.nextPrayer {
+                NextPrayerHeroView(
+                    prayer: next,
+                    countdown: viewModel.timeUntilNext,
+                    coordinate: viewModel.userCoordinate
                 )
-
-                if viewModel.locationStatus == .denied {
-                    LocationDeniedView()
-                } else if let next = viewModel.nextPrayer {
-                    NextPrayerHeroView(
-                        prayer: next,
-                        countdown: viewModel.timeUntilNext,
-                        coordinate: viewModel.userCoordinate
-                    )
-                } else {
-                    LoadingHeroView()
-                }
-
-                ScrollView {
-                    VStack(spacing: 8) {
-                        ForEach(viewModel.prayerTimes) { prayerTime in
-                            PrayerTimeRowView(prayerTime: prayerTime)
-                        }
-                        if viewModel.prayerTimes.isEmpty && viewModel.locationStatus == .loading {
-                            ForEach(0..<6, id: \.self) { _ in SkeletonRowView() }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-                    .padding(.bottom, 16)
-                    .frame(maxWidth: .infinity)
-                }
-                .scrollIndicators(.hidden)
+            } else {
+                LoadingHeroView()
             }
+
+            VStack(spacing: 4) {
+                ForEach(viewModel.prayerTimes) { prayerTime in
+                    PrayerTimeRowView(prayerTime: prayerTime)
+                }
+                if viewModel.prayerTimes.isEmpty && viewModel.locationStatus == .loading {
+                    ForEach(0..<6, id: \.self) { _ in SkeletonRowView() }
+                }
+            }
+            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity)
         }
+        .padding(.top, topPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(BackgroundView().ignoresSafeArea())
         .sheet(isPresented: $showSettings) {
             SettingsView(viewModel: viewModel)
         }
@@ -56,7 +69,7 @@ struct BackgroundView: View {
     var body: some View {
         ZStack {
             Color(hex: "0A0E1A").ignoresSafeArea()
-            RadialGradient(gradient: Gradient(colors: [Color(hex: "1A2444").opacity(0.8), Color.clear]),
+            RadialGradient(gradient: Gradient(colors: [Color(hex: "1A2444").opacity(0.3), Color.clear]),
                            center: .top, startRadius: 0, endRadius: 400).ignoresSafeArea()
             RadialGradient(gradient: Gradient(colors: [Color(hex: "B8860B").opacity(0.06), Color.clear]),
                            center: .bottom, startRadius: 0, endRadius: 300).ignoresSafeArea()
@@ -98,9 +111,11 @@ struct HeaderView: View {
     let date: Date
     @Binding var showSettings: Bool
 
-    var dateString: String {
-        let f = DateFormatter(); f.dateFormat = "EEEE, d MMMM yyyy"; return f.string(from: date)
-    }
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEEE, d MMMM yyyy"; return f
+    }()
+
+    var dateString: String { Self.dateFormatter.string(from: date) }
 
     var body: some View {
         HStack(alignment: .center, spacing: 14) {
@@ -110,11 +125,11 @@ struct HeaderView: View {
                         .font(.system(size: 11))
                         .foregroundColor(Color(hex: "D4AF37"))
                     Text(locationName)
-                        .font(.custom("Georgia", size: 15))
+                        .font(.custom("Georgia", size: 15, relativeTo: .body))
                         .foregroundColor(.white.opacity(0.9))
                 }
                 Text(dateString)
-                    .font(.custom("Georgia-Italic", size: 12))
+                    .font(.custom("Georgia-Italic", size: 12, relativeTo: .caption))
                     .foregroundColor(.white.opacity(0.45))
             }
 
@@ -122,16 +137,18 @@ struct HeaderView: View {
 
             Button(action: { showSettings = true }) {
                 ZStack {
-                    Circle().fill(Color.white.opacity(0.07)).frame(width: 40, height: 40)
+                    Circle().fill(Color.white.opacity(0.07)).frame(width: 44, height: 44)
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 16))
                         .foregroundColor(Color(hex: "D4AF37"))
                 }
             }
+            .accessibilityLabel("Settings")
+            .accessibilityHint("Calculation method and prayer reminders")
         }
         .padding(.horizontal, 20)
-        .padding(.top, 50)
-        .padding(.bottom, 8)
+        .padding(.top, 2)
+        .padding(.bottom, 4)
     }
 }
 
@@ -143,62 +160,55 @@ struct NextPrayerHeroView: View {
     @State private var appear = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                Circle().fill(Color(hex: "D4AF37").opacity(0.12)).frame(width: 78, height: 78).blur(radius: 14)
-                Image(systemName: prayer.prayer.icon)
-                    .font(.system(size: 32))
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: "F5D07A"), Color(hex: "B8860B")], startPoint: .top, endPoint: .bottom))
-                    .shadow(color: Color(hex: "D4AF37").opacity(0.5), radius: 10)
-                    .scaleEffect(appear ? 1 : 0.6).opacity(appear ? 1 : 0)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.7), value: appear)
-            }.padding(.top, 2)
-
-            Text("Next Prayer")
-                .font(.custom("Georgia-Italic", size: 11)).foregroundColor(.white.opacity(0.45))
-                .tracking(2).textCase(.uppercase).padding(.top, 8)
-
-            HStack(spacing: 10) {
-                Text(prayer.prayer.arabicName).font(.custom("Georgia", size: 16)).foregroundColor(Color(hex: "D4AF37").opacity(0.7))
-                Text(prayer.prayer.rawValue).font(.custom("Georgia-Bold", size: 22)).foregroundColor(.white)
-                Text(prayer.prayer.arabicName).font(.custom("Georgia", size: 16)).foregroundColor(Color(hex: "D4AF37").opacity(0.7))
-            }
-            .opacity(appear ? 1 : 0).offset(y: appear ? 0 : 10)
-            .animation(.easeOut(duration: 0.5).delay(0.15), value: appear)
-
-            Text(prayer.timeString)
-                .font(.system(size: 40, weight: .thin))
-                .foregroundStyle(LinearGradient(colors: [Color(hex: "F5D07A"), Color(hex: "C9A227")], startPoint: .leading, endPoint: .trailing))
-                .tracking(-1).padding(.top, 2)
-                .opacity(appear ? 1 : 0).animation(.easeOut(duration: 0.5).delay(0.25), value: appear)
-
-            if !countdown.isEmpty {
-                HStack(spacing: 6) {
-                    Image(systemName: "timer").font(.system(size: 10))
-                    Text("in \(countdown)").font(.custom("Georgia-Italic", size: 13))
+        HStack(alignment: .center, spacing: 10) {
+            VStack(spacing: 2) {
+                HStack(spacing: 8) {
+                    Image(systemName: prayer.prayer.icon)
+                        .font(.system(size: 22))
+                        .foregroundStyle(LinearGradient(colors: [Color(hex: "F5D07A"), Color(hex: "B8860B")], startPoint: .top, endPoint: .bottom))
+                    Text("Next Prayer")
+                        .font(.custom("Georgia-Italic", size: 11, relativeTo: .caption2)).foregroundColor(.white.opacity(0.45))
+                        .tracking(2).textCase(.uppercase)
                 }
-                .foregroundColor(.white.opacity(0.55)).padding(.top, 6)
-                .opacity(appear ? 1 : 0).animation(.easeOut(duration: 0.5).delay(0.35), value: appear)
+
+                HStack(spacing: 10) {
+                    Text(prayer.prayer.rawValue).font(.custom("Georgia-Bold", size: 18, relativeTo: .headline)).foregroundColor(.white)
+                    Text(prayer.prayer.arabicName).font(.custom("Georgia", size: 18, relativeTo: .headline)).foregroundColor(Color(hex: "D4AF37").opacity(0.7))
+                }
+                .opacity(appear ? 1 : 0).offset(y: appear ? 0 : 10)
+                .animation(.easeOut(duration: 0.5).delay(0.15), value: appear)
+
+                Text(prayer.timeString)
+                    .font(.system(.largeTitle, design: .default, weight: .thin))
+                    .foregroundStyle(LinearGradient(colors: [Color(hex: "F5D07A"), Color(hex: "C9A227")], startPoint: .leading, endPoint: .trailing))
+                    .tracking(-1)
+                    .opacity(appear ? 1 : 0).animation(.easeOut(duration: 0.5).delay(0.25), value: appear)
+
+                if !countdown.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "timer").font(.system(.caption2))
+                        Text("in \(countdown)").font(.custom("Georgia-Italic", size: 13, relativeTo: .footnote))
+                    }
+                    .foregroundColor(.white.opacity(0.55))
+                    .opacity(appear ? 1 : 0).animation(.easeOut(duration: 0.5).delay(0.35), value: appear)
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            VStack(spacing: 4) {
+                QiblaCompassView(coordinate: coordinate)
+                Text("Qibla")
+                    .font(.custom("Georgia-Italic", size: 10, relativeTo: .caption2))
+                    .foregroundColor(Color(hex: "D4AF37").opacity(0.6))
+                    .tracking(1)
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14).padding(.horizontal, 16)
+        .padding(.vertical, 6).padding(.horizontal, 16)
         .background(
             RoundedRectangle(cornerRadius: 22).fill(Color.white.opacity(0.04))
                 .overlay(RoundedRectangle(cornerRadius: 22).stroke(
                     LinearGradient(colors: [Color(hex: "D4AF37").opacity(0.4), Color.clear], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1))
         )
-        .overlay(alignment: .topTrailing) {
-            VStack(spacing: 2) {
-                QiblaCompassView(coordinate: coordinate)
-                Text("Qibla")
-                    .font(.custom("Georgia-Italic", size: 9))
-                    .foregroundColor(Color(hex: "D4AF37").opacity(0.6))
-                    .tracking(1)
-            }
-            .padding(.top, 10)
-            .padding(.trailing, 12)
-        }
         .padding(.horizontal, 20).padding(.bottom, 4)
         .onAppear { appear = true }
         .onChange(of: prayer.prayer) {
@@ -246,32 +256,35 @@ struct PrayerTimeRowView: View {
     @State private var appear = false
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 10) {
             ZStack {
-                Circle().fill(iconBackground).frame(width: 36, height: 36)
-                Image(systemName: prayerTime.prayer.icon).font(.system(size: 15)).foregroundColor(iconColor)
+                Circle().fill(iconBackground).frame(width: 28, height: 28)
+                Image(systemName: prayerTime.prayer.icon).font(.system(size: 13)).foregroundColor(iconColor)
             }
-            VStack(alignment: .leading, spacing: 1) {
-                Text(prayerTime.prayer.rawValue).font(.custom("Georgia-Bold", size: 15)).foregroundColor(nameColor)
-                Text(prayerTime.prayer.arabicName).font(.custom("Georgia", size: 11)).foregroundColor(.white.opacity(0.35))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(prayerTime.prayer.rawValue).font(.custom("Georgia-Bold", size: 14, relativeTo: .callout)).foregroundColor(nameColor)
+                Text(prayerTime.prayer.arabicName).font(.custom("Georgia", size: 10, relativeTo: .caption2)).foregroundColor(.white.opacity(0.35))
             }
             Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(prayerTime.timeString).font(.system(size: 16, weight: prayerTime.isNext ? .semibold : .light)).foregroundColor(timeColor)
+            HStack(spacing: 6) {
                 if prayerTime.isCurrent {
-                    Label("Current", systemImage: "circle.fill").font(.system(size: 9))
+                    Label("Current", systemImage: "circle.fill").font(.system(.caption2))
                         .foregroundColor(Color(hex: "4CAF50").opacity(0.9)).labelStyle(.titleAndIcon)
                 } else if prayerTime.isNext {
-                    Label("Next", systemImage: "arrow.right.circle.fill").font(.system(size: 9))
+                    Label("Next", systemImage: "arrow.right.circle.fill").font(.system(.caption2))
                         .foregroundColor(Color(hex: "D4AF37").opacity(0.9)).labelStyle(.titleAndIcon)
                 }
+                Text(prayerTime.timeString).font(.system(.callout, weight: prayerTime.isNext ? .semibold : .light)).foregroundColor(timeColor)
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 9)
-        .background(RoundedRectangle(cornerRadius: 14).fill(rowBackground)
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(rowBorder, lineWidth: 1)))
+        .padding(.horizontal, 12).padding(.vertical, 2)
+        .background(RoundedRectangle(cornerRadius: 10).fill(rowBackground)
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(rowBorder, lineWidth: 1)))
         .opacity(appear ? 1 : 0).offset(y: appear ? 0 : 12)
         .onAppear { withAnimation(.easeOut(duration: 0.4)) { appear = true } }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(prayerTime.prayer.rawValue), \(prayerTime.timeString)")
+        .accessibilityValue(prayerTime.isCurrent ? "Current prayer" : prayerTime.isNext ? "Next prayer" : "")
     }
 
     var iconBackground: Color {

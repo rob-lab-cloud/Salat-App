@@ -139,6 +139,11 @@ struct QiblaCompassView: View {
         .onChange(of: coordinateKey) { _, _ in
             if let coord = coordinate { compass.start(coordinate: coord) }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Qibla compass")
+        .accessibilityValue(coordinate == nil
+            ? "Waiting for location"
+            : "Kaaba bearing \(Int(compass.qiblaAngle)) degrees, device heading \(Int(compass.heading)) degrees")
     }
 }
 

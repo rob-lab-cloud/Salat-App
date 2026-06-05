@@ -46,7 +46,8 @@ struct SalatProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<SalatEntry>) -> Void) {
         let entry = SalatEntry(date: Date(), data: loadWidgetData() ?? sampleData())
         // Refresh every 30 min so next/current stays accurate
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())!
+        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())
+            ?? Date().addingTimeInterval(1800)
         completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
     }
 

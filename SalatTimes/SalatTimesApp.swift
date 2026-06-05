@@ -19,7 +19,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
-        NotificationManager.shared.requestAuthorization()
+        // Authorization is requested user-initiated from Settings → Reminders,
+        // not at launch, so the prompt is shown with on-screen context.
         return true
     }
 

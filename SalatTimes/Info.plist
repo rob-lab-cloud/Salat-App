@@ -16,14 +16,6 @@
     <string>1</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>SalatTimes needs your location to calculate accurate prayer times and Qibla direction.</string>
-    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>SalatTimes uses your location to keep prayer times and Qibla direction updated throughout the day.</string>
-    <key>NSMotionUsageDescription</key>
-    <string>SalatTimes uses your device's compass to show the Qibla direction.</string>
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>fetch</string>
-    </array>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>

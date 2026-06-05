@@ -24,6 +24,7 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
 
     private let locationManager = CLLocationManager()
     private var userLocation: CLLocationCoordinate2D?
+    private var userTimeZone: TimeZone = .current
     private var timer: Timer?
 
     enum LocationStatus {
@@ -36,9 +37,6 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
            let saved = CalculationMethod(rawValue: raw) {
             self.selectedMethod = saved
         }
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
-        locationManager.requestWhenInUseAuthorization()
 
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
@@ -50,13 +48,19 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
         }
 
         #if targetEnvironment(simulator)
-        // Provide a default location in the simulator (Mecca)
-        let simCoord = CLLocationCoordinate2D(latitude: 21.4225, longitude: 39.8262)
+        // In simulator, lock to Dubai so prayer times align with the Mac's clock
+        // (the simulator GPS would otherwise default to Cupertino, mismatching the timezone).
+        let simCoord = CLLocationCoordinate2D(latitude: 25.2048, longitude: 55.2708)
         userLocation = simCoord
         userCoordinate = simCoord
-        locationName = "Mecca, Saudi Arabia"
+        userTimeZone = TimeZone(identifier: "Asia/Dubai") ?? .current
+        locationName = "Dubai, UAE"
         locationStatus = .authorized
         refreshPrayerTimes()
+        #else
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+        locationManager.requestWhenInUseAuthorization()
         #endif
     }
 
@@ -67,7 +71,7 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
         let now = Date()
 
         var todayTimes = PrayerTimesCalculator.calculate(
-            for: now, coordinate: location, method: selectedMethod
+            for: now, coordinate: location, method: selectedMethod, timeZone: userTimeZone
         )
 
         // Build a multi-day window so notifications and the hero "next prayer"
@@ -76,7 +80,7 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
         for offset in 1...6 {
             if let day = Calendar.current.date(byAdding: .day, value: offset, to: now) {
                 allTimes += PrayerTimesCalculator.calculate(
-                    for: day, coordinate: location, method: selectedMethod
+                    for: day, coordinate: location, method: selectedMethod, timeZone: userTimeZone
                 )
             }
         }
@@ -132,8 +136,13 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
             guard let self = self, let placemark = placemarks?.first else { return }
             let city    = placemark.locality ?? ""
             let country = placemark.country ?? ""
+            let placemarkTZ = placemark.timeZone
             DispatchQueue.main.async {
                 self.locationName = city.isEmpty ? country : (country.isEmpty ? city : "\(city), \(country)")
+                if let tz = placemarkTZ, tz != self.userTimeZone {
+                    self.userTimeZone = tz
+                    self.refreshPrayerTimes()
+                }
                 if !self.prayerTimes.isEmpty {
                     saveWidgetData(locationName: self.locationName, prayerTimes: self.prayerTimes)
                 }

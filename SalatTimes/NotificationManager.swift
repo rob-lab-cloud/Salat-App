@@ -1,6 +1,9 @@
 import Foundation
+import OSLog
 import UserNotifications
 import CoreLocation
+
+private let log = Logger(subsystem: "com.salatimes.app", category: "notifications")
 
 // MARK: - Reminder Settings stored per prayer
 struct PrayerReminderSettings: Codable, Equatable {
@@ -121,7 +124,7 @@ class NotificationManager: ObservableObject {
 
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("Notification scheduling error: \(error)")
+                log.error("Notification scheduling error: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
