@@ -2,6 +2,7 @@ import Foundation
 import OSLog
 import UserNotifications
 import CoreLocation
+import UIKit
 
 private let log = Logger(subsystem: "com.salatimes.app", category: "notifications")
 
@@ -30,13 +31,13 @@ class NotificationManager: ObservableObject {
     // MARK: - Authorization
     func requestAuthorization() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
-            DispatchQueue.main.async { self.isAuthorized = granted }
+            Task { @MainActor in self.isAuthorized = granted }
         }
     }
 
     func checkAuthorization() {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.isAuthorized = settings.authorizationStatus == .authorized
             }
         }
@@ -67,27 +68,37 @@ class NotificationManager: ObservableObject {
     }
 
     // MARK: - Schedule notifications
-    func scheduleNotifications(for prayerTimes: [PrayerTime]) {
-        // Remove all previously scheduled prayer notifications (any day, any prefix match)
-        UNUserNotificationCenter.current().getPendingNotificationRequests { [weak self] requests in
-            guard let self = self else { return }
-            let salatIDs = requests.map(\.identifier).filter { $0.hasPrefix("salat_") }
-            if !salatIDs.isEmpty {
-                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: salatIDs)
+    // `completion` fires after every request has been handed to the system —
+    // needed by the background refresh task to know when it can complete.
+    func scheduleNotifications(for prayerTimes: [PrayerTime], completion: (() -> Void)? = nil) {
+        // Check authorization fresh rather than relying on the cached flag:
+        // in a background launch the async init check may not have landed yet.
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] notifSettings in
+            guard let self = self, notifSettings.authorizationStatus == .authorized else {
+                completion?()
+                return
             }
 
-            guard self.isAuthorized else { return }
+            // Remove all previously scheduled prayer notifications (any day, any prefix match)
+            UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+                let salatIDs = requests.map(\.identifier).filter { $0.hasPrefix("salat_") }
+                if !salatIDs.isEmpty {
+                    UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: salatIDs)
+                }
 
-            for pt in prayerTimes {
-                guard pt.prayer != .sunrise else { continue }
-                let settings = self.reminderSettings[pt.prayer.rawValue] ?? PrayerReminderSettings()
-                guard settings.isEnabled else { continue }
-                self.scheduleNotification(for: pt, settings: settings)
+                let group = DispatchGroup()
+                for pt in prayerTimes {
+                    guard pt.prayer != .sunrise else { continue }
+                    let settings = self.reminderSettings[pt.prayer.rawValue] ?? PrayerReminderSettings()
+                    guard settings.isEnabled else { continue }
+                    self.scheduleNotification(for: pt, settings: settings, group: group)
+                }
+                group.notify(queue: .main) { completion?() }
             }
         }
     }
 
-    private func scheduleNotification(for prayerTime: PrayerTime, settings: PrayerReminderSettings) {
+    private func scheduleNotification(for prayerTime: PrayerTime, settings: PrayerReminderSettings, group: DispatchGroup? = nil) {
         let content = UNMutableNotificationContent()
 
         let minutesBefore = settings.minutesBefore
@@ -102,8 +113,8 @@ class NotificationManager: ObservableObject {
         // Only use the adhan sound if the asset is actually bundled — otherwise the
         // OS would play nothing instead of falling back to the default sound.
         if settings.playAdhan,
-           Bundle.main.url(forResource: "adhan", withExtension: "mp3") != nil {
-            content.sound = UNNotificationSound(named: UNNotificationSoundName("adhan.mp3"))
+           Bundle.main.url(forResource: "adhan", withExtension: "caf") != nil {
+            content.sound = UNNotificationSound(named: UNNotificationSoundName("adhan.caf"))
         } else {
             content.sound = .default
         }
@@ -122,10 +133,12 @@ class NotificationManager: ObservableObject {
             trigger: trigger
         )
 
+        group?.enter()
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 log.error("Notification scheduling error: \(error.localizedDescription, privacy: .public)")
             }
+            group?.leave()
         }
     }
 
@@ -143,6 +156,14 @@ class NotificationManager: ObservableObject {
     // MARK: - Cancel all
     func cancelAll() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+    }
+
+    // MARK: - Open Settings (call when isAuthorized == false)
+    func openNotificationSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        DispatchQueue.main.async {
+            UIApplication.shared.open(url)
+        }
     }
 }
 

@@ -15,12 +15,22 @@
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>SalatTimes needs your location to calculate accurate prayer times and Qibla direction.</string>
+    <string>SalatTimes needs your location to calculate accurate prayer times and Qibla direction. Your location is never stored or shared.</string>
+    <key>NSMotionUsageDescription</key>
+    <string>Motion access is used to point the Qibla compass accurately toward the Kaaba in Mecca.</string>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
     </array>
     <key>CFBundleDisplayName</key>
     <string>Salat Times</string>
+    <key>BGTaskSchedulerPermittedIdentifiers</key>
+    <array>
+        <string>com.salatimes.app.refresh</string>
+    </array>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+    </array>
 </dict>
 </plist>

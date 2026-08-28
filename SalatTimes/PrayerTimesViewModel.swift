@@ -2,9 +2,10 @@ import Foundation
 import CoreLocation
 import UserNotifications
 
+@MainActor
 class PrayerTimesViewModel: NSObject, ObservableObject {
 
-    private static let methodKey = "selectedCalculationMethod"
+    private static let methodKey = calculationMethodKey
 
     @Published var prayerTimes: [PrayerTime] = []
     @Published var nextPrayer: PrayerTime?
@@ -47,21 +48,9 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
             self.currentDate = Date()
         }
 
-        #if targetEnvironment(simulator)
-        // In simulator, lock to Dubai so prayer times align with the Mac's clock
-        // (the simulator GPS would otherwise default to Cupertino, mismatching the timezone).
-        let simCoord = CLLocationCoordinate2D(latitude: 25.2048, longitude: 55.2708)
-        userLocation = simCoord
-        userCoordinate = simCoord
-        userTimeZone = TimeZone(identifier: "Asia/Dubai") ?? .current
-        locationName = "Dubai, UAE"
-        locationStatus = .authorized
-        refreshPrayerTimes()
-        #else
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
         locationManager.requestWhenInUseAuthorization()
-        #endif
     }
 
     deinit { timer?.invalidate() }
@@ -77,13 +66,18 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
         // Build a multi-day window so notifications and the hero "next prayer"
         // can survive past midnight without re-opening the app.
         var allTimes: [PrayerTime] = todayTimes
-        for offset in 1...6 {
-            if let day = Calendar.current.date(byAdding: .day, value: offset, to: now) {
-                allTimes += PrayerTimesCalculator.calculate(
-                    for: day, coordinate: location, method: selectedMethod, timeZone: userTimeZone
-                )
-            }
-        }
+        allTimes += PrayerTimesCalculator.calculateWindow(
+            days: 6,
+            from: Calendar.current.date(byAdding: .day, value: 1, to: now) ?? now,
+            coordinate: location, method: selectedMethod, timeZone: userTimeZone
+        )
+
+        // Persist the location so the background refresh task can reschedule
+        // notifications without a live GPS fix.
+        SavedLocation(
+            latitude: location.latitude, longitude: location.longitude,
+            timeZoneID: userTimeZone.identifier, locationName: locationName
+        ).save()
 
         let nextFuture = allTimes.first { $0.prayer != .sunrise && $0.time > now }
 
@@ -137,7 +131,7 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
             let city    = placemark.locality ?? ""
             let country = placemark.country ?? ""
             let placemarkTZ = placemark.timeZone
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self.locationName = city.isEmpty ? country : (country.isEmpty ? city : "\(city), \(country)")
                 if let tz = placemarkTZ, tz != self.userTimeZone {
                     self.userTimeZone = tz
@@ -145,6 +139,14 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
                 }
                 if !self.prayerTimes.isEmpty {
                     saveWidgetData(locationName: self.locationName, prayerTimes: self.prayerTimes)
+                }
+                // Re-save with the resolved city name (the first save happens
+                // before geocoding completes).
+                if let coord = self.userLocation {
+                    SavedLocation(
+                        latitude: coord.latitude, longitude: coord.longitude,
+                        timeZoneID: self.userTimeZone.identifier, locationName: self.locationName
+                    ).save()
                 }
             }
         }
@@ -158,7 +160,10 @@ extension PrayerTimesViewModel: CLLocationManagerDelegate {
         switch manager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
             locationStatus = .loading
-            locationManager.requestLocation()
+            // Continuously listen until the first fix arrives; a one-shot
+            // requestLocation() can silently time out (e.g. simulator with
+            // no simulated location yet) and never deliver.
+            locationManager.startUpdatingLocation()
         case .denied, .restricted:
             locationStatus = .denied
             locationName = "Location denied"
@@ -169,6 +174,7 @@ extension PrayerTimesViewModel: CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
+        manager.stopUpdatingLocation()
         userLocation = location.coordinate
         userCoordinate = location.coordinate
         reverseGeocode(location: location)
@@ -176,6 +182,11 @@ extension PrayerTimesViewModel: CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        // kCLErrorLocationUnknown is transient - Core Location keeps trying,
+        // so stay in the loading state instead of giving up.
+        if let clError = error as? CLError, clError.code == .locationUnknown {
+            return
+        }
         locationStatus = .denied
         locationName = "Location unavailable"
     }

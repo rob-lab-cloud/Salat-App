@@ -89,7 +89,26 @@ struct PrayerTime: Identifiable {
 
 // MARK: - Calculator
 class PrayerTimesCalculator {
-    
+
+    /// Prayer times for `days` consecutive days starting from `date`'s day.
+    /// Used by the app's refresh and by the background task so notifications
+    /// can be rescheduled without a live location fix.
+    static func calculateWindow(
+        days: Int,
+        from date: Date,
+        coordinate: CLLocationCoordinate2D,
+        method: CalculationMethod,
+        timeZone: TimeZone
+    ) -> [PrayerTime] {
+        var all: [PrayerTime] = []
+        for offset in 0..<days {
+            if let day = Calendar.current.date(byAdding: .day, value: offset, to: date) {
+                all += calculate(for: day, coordinate: coordinate, method: method, timeZone: timeZone)
+            }
+        }
+        return all
+    }
+
     static func calculate(
         for date: Date = Date(),
         coordinate: CLLocationCoordinate2D,
@@ -219,25 +238,43 @@ class PrayerTimesCalculator {
     }
 }
 
+// MARK: - Last Known Location
+// Persisted so the background refresh task can recompute prayer times and
+// reschedule notifications without a live GPS fix.
+
+let calculationMethodKey = "selectedCalculationMethod"
+
+struct SavedLocation: Codable {
+    var latitude: Double
+    var longitude: Double
+    var timeZoneID: String
+    var locationName: String
+
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+    var timeZone: TimeZone {
+        TimeZone(identifier: timeZoneID) ?? .current
+    }
+
+    private static let key = "lastKnownLocation"
+
+    static func load() -> SavedLocation? {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(SavedLocation.self, from: data)
+    }
+
+    func save() {
+        if let data = try? JSONEncoder().encode(self) {
+            UserDefaults.standard.set(data, forKey: Self.key)
+        }
+    }
+}
+
 // MARK: - Widget Data Bridge
 
-private let appGroupID = "group.com.salatimes.app"
+private let appGroupID = "group.salatimes.app"
 
-struct WidgetPrayerData: Codable {
-    var locationName: String
-    var prayers: [WidgetPrayer]
-    var updatedAt: Date
-}
-
-struct WidgetPrayer: Codable, Identifiable {
-    var id: String { name }
-    var name: String
-    var arabicName: String
-    var timeString: String
-    var isNext: Bool
-    var isCurrent: Bool
-    var iconName: String
-}
 
 func saveWidgetData(locationName: String, prayerTimes: [PrayerTime]) {
     let widgets = prayerTimes.map { pt in
@@ -247,7 +284,8 @@ func saveWidgetData(locationName: String, prayerTimes: [PrayerTime]) {
             timeString: pt.timeString,
             isNext:     pt.isNext,
             isCurrent:  pt.isCurrent,
-            iconName:   pt.prayer.icon
+            iconName:   pt.prayer.icon,
+            time:       pt.time
         )
     }
     let data = WidgetPrayerData(locationName: locationName, prayers: widgets, updatedAt: Date())

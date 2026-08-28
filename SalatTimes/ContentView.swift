@@ -5,6 +5,7 @@ import UIKit
 struct ContentView: View {
     @StateObject private var viewModel = PrayerTimesViewModel()
     @State private var showSettings = false
+    @State private var safeAreaTop: CGFloat = 0
 
     // Target distance from screen top to the header. Looks identical on iOS 17/18/26
     // regardless of how the system reports its safe-area inset.
@@ -13,7 +14,10 @@ struct ContentView: View {
     // Read the actual system safe-area top from UIKit's key window. SwiftUI's
     // GeometryReader/safeAreaInsets gives inconsistent values depending on parent
     // hierarchy; UIKit's window-level inset is the source of truth.
-    private var systemSafeAreaTop: CGFloat {
+    // NOTE: read once in onAppear, NOT during body evaluation - a live read of
+    // window insets while laying out creates an AttributeGraph cycle that can
+    // wedge the view and stop all further UI updates.
+    private static func readSystemSafeAreaTop() -> CGFloat {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }
@@ -23,7 +27,7 @@ struct ContentView: View {
     var body: some View {
         // Allow negative values so we can pull content above the system safe-area
         // boundary on devices with a large Dynamic Island inset.
-        let topPadding = Self.targetTopInset - systemSafeAreaTop
+        let topPadding = Self.targetTopInset - safeAreaTop
 
         VStack(spacing: 20) {
             HeaderView(
@@ -58,6 +62,7 @@ struct ContentView: View {
         .padding(.top, topPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(BackgroundView().ignoresSafeArea())
+        .onAppear { safeAreaTop = Self.readSystemSafeAreaTop() }
         .sheet(isPresented: $showSettings) {
             SettingsView(viewModel: viewModel)
         }
@@ -267,10 +272,7 @@ struct PrayerTimeRowView: View {
             }
             Spacer()
             HStack(spacing: 6) {
-                if prayerTime.isCurrent {
-                    Label("Current", systemImage: "circle.fill").font(.system(.caption2))
-                        .foregroundColor(Color(hex: "4CAF50").opacity(0.9)).labelStyle(.titleAndIcon)
-                } else if prayerTime.isNext {
+                if prayerTime.isNext {
                     Label("Next", systemImage: "arrow.right.circle.fill").font(.system(.caption2))
                         .foregroundColor(Color(hex: "D4AF37").opacity(0.9)).labelStyle(.titleAndIcon)
                 }
@@ -288,28 +290,22 @@ struct PrayerTimeRowView: View {
     }
 
     var iconBackground: Color {
-        prayerTime.isNext ? Color(hex: "D4AF37").opacity(0.18) :
-        prayerTime.isCurrent ? Color(hex: "1A4A2A").opacity(0.8) : Color.white.opacity(0.05)
+        prayerTime.isNext ? Color(hex: "D4AF37").opacity(0.18) : Color.white.opacity(0.05)
     }
     var iconColor: Color {
-        prayerTime.isNext ? Color(hex: "F5D07A") :
-        prayerTime.isCurrent ? Color(hex: "4CAF50") : Color.white.opacity(0.4)
+        prayerTime.isNext ? Color(hex: "F5D07A") : Color.white.opacity(0.4)
     }
     var nameColor: Color {
-        prayerTime.isNext ? .white :
-        prayerTime.isCurrent ? Color(hex: "7ED89A") : Color.white.opacity(0.7)
+        prayerTime.isNext ? .white : Color.white.opacity(0.7)
     }
     var timeColor: Color {
-        prayerTime.isNext ? Color(hex: "F5D07A") :
-        prayerTime.isCurrent ? Color(hex: "7ED89A") : Color.white.opacity(0.55)
+        prayerTime.isNext ? Color(hex: "F5D07A") : Color.white.opacity(0.55)
     }
     var rowBackground: Color {
-        prayerTime.isNext ? Color(hex: "1C1E0E").opacity(0.6) :
-        prayerTime.isCurrent ? Color(hex: "0A1A0F").opacity(0.8) : Color.white.opacity(0.04)
+        prayerTime.isNext ? Color(hex: "1C1E0E").opacity(0.6) : Color.white.opacity(0.04)
     }
     var rowBorder: Color {
-        prayerTime.isNext ? Color(hex: "D4AF37").opacity(0.35) :
-        prayerTime.isCurrent ? Color(hex: "4CAF50").opacity(0.25) : Color.white.opacity(0.07)
+        prayerTime.isNext ? Color(hex: "D4AF37").opacity(0.35) : Color.white.opacity(0.07)
     }
 }
 
@@ -484,7 +480,7 @@ struct NotificationsSection: View {
                     Image(systemName: "speaker.wave.2.fill").foregroundColor(Color(hex: "D4AF37").opacity(0.7))
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Adhan Sound").font(.custom("Georgia-Bold", size: 13)).foregroundColor(.white.opacity(0.8))
-                        Text("Add an audio file named \"adhan.mp3\" to the app bundle to play adhan with notifications. If not present, the default notification sound is used.")
+                        Text("When enabled, the adhan is played with prayer time notifications. Otherwise, the default notification sound is used.")
                             .font(.custom("Georgia-Italic", size: 12)).foregroundColor(.white.opacity(0.45))
                     }
                 }

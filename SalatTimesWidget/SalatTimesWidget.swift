@@ -2,24 +2,9 @@ import WidgetKit
 import SwiftUI
 
 // MARK: - Shared data store (App Group)
-// In Xcode, add App Group "group.com.salatimes.app" to both targets.
-private let appGroupID = "group.com.salatimes.app"
+// In Xcode, add App Group "group.salatimes.app" to both targets.
+private let appGroupID = "group.salatimes.app"
 
-struct WidgetPrayerData: Codable {
-    var locationName: String
-    var prayers: [WidgetPrayer]
-    var updatedAt: Date
-}
-
-struct WidgetPrayer: Codable, Identifiable {
-    var id: String { name }
-    var name: String
-    var arabicName: String
-    var timeString: String     // "5:23 AM"
-    var isNext: Bool
-    var isCurrent: Bool
-    var iconName: String
-}
 
 func loadWidgetData() -> WidgetPrayerData? {
     guard let raw  = UserDefaults(suiteName: appGroupID)?.data(forKey: "widgetData"),
@@ -44,11 +29,53 @@ struct SalatProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SalatEntry>) -> Void) {
-        let entry = SalatEntry(date: Date(), data: loadWidgetData() ?? sampleData())
-        // Refresh every 30 min so next/current stays accurate
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 30, to: Date())
-            ?? Date().addingTimeInterval(1800)
-        completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
+        let data = loadWidgetData() ?? sampleData()
+        let now = Date()
+
+        // One entry now plus one at each upcoming prayer time, so the
+        // Next/Current highlight flips at the exact minute with no reloads.
+        var entries = [SalatEntry(date: now, data: remarked(data, at: now))]
+        let futureTimes = data.prayers.compactMap(\.time).filter { $0 > now }.sorted()
+        for t in futureTimes {
+            entries.append(SalatEntry(date: t, data: remarked(data, at: t)))
+        }
+
+        // After the last prayer of the day, ask for a reload at the next
+        // midnight - by then the app or its background task will have saved
+        // fresh data. Data without times (old format) falls back to polling.
+        let refreshDate: Date
+        if let lastTime = futureTimes.last {
+            refreshDate = lastTime.addingTimeInterval(60)
+        } else if data.prayers.contains(where: { $0.time != nil }) {
+            let midnight = Calendar.current.startOfDay(for: now)
+            refreshDate = Calendar.current.date(byAdding: .day, value: 1, to: midnight)
+                ?? now.addingTimeInterval(3600)
+        } else {
+            refreshDate = now.addingTimeInterval(1800)
+        }
+        completion(Timeline(entries: entries, policy: .after(refreshDate)))
+    }
+
+    // Recompute isNext/isCurrent for a given moment. If the data has no
+    // per-prayer times (old format), keep the flags the app saved.
+    private func remarked(_ data: WidgetPrayerData, at date: Date) -> WidgetPrayerData {
+        guard data.prayers.contains(where: { $0.time != nil }) else { return data }
+        var d = data
+        for i in d.prayers.indices {
+            d.prayers[i].isNext = false
+            d.prayers[i].isCurrent = false
+        }
+        if let idx = d.prayers.firstIndex(where: {
+            $0.name != "Sunrise" && ($0.time ?? .distantPast) > date
+        }) {
+            d.prayers[idx].isNext = true
+        }
+        if let idx = d.prayers.lastIndex(where: {
+            $0.name != "Sunrise" && ($0.time ?? .distantFuture) <= date
+        }) {
+            d.prayers[idx].isCurrent = true
+        }
+        return d
     }
 
     private func sampleData() -> WidgetPrayerData {
@@ -76,64 +103,56 @@ struct SmallWidgetView: View {
     var next: WidgetPrayer? { data?.prayers.first(where: { $0.isNext }) }
 
     var body: some View {
-        ZStack {
-            Color(red: 0.039, green: 0.055, blue: 0.102)  // #0A0E1A
-
-            LinearGradient(
-                colors: [Color(red: 0.1, green: 0.14, blue: 0.27).opacity(0.9), .clear],
-                startPoint: .top, endPoint: .bottom
-            )
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 8))
-                        .foregroundColor(goldColor)
-                    Text(data?.locationName ?? "—")
-                        .font(.custom("Georgia", size: 9))
-                        .foregroundColor(.white.opacity(0.7))
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                if let p = next {
-                    Image(systemName: p.iconName)
-                        .font(.system(size: 22))
-                        .foregroundStyle(
-                            LinearGradient(colors: [goldLight, goldDark], startPoint: .top, endPoint: .bottom)
-                        )
-                        .shadow(color: goldColor.opacity(0.5), radius: 6)
-
-                    Text(p.name)
-                        .font(.custom("Georgia-Bold", size: 15))
-                        .foregroundColor(.white)
-
-                    Text(p.arabicName)
-                        .font(.custom("Georgia", size: 10))
-                        .foregroundColor(goldColor.opacity(0.7))
-
-                    Text(p.timeString)
-                        .font(.system(size: 20, weight: .thin))
-                        .foregroundStyle(
-                            LinearGradient(colors: [goldLight, goldDark], startPoint: .leading, endPoint: .trailing)
-                        )
-
-                    Label("Next", systemImage: "arrow.right.circle.fill")
-                        .font(.system(size: 9))
-                        .foregroundColor(goldColor.opacity(0.8))
-                } else {
-                    Image(systemName: "moon.stars.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(goldColor.opacity(0.5))
-                    Text("Loading...")
-                        .font(.custom("Georgia-Italic", size: 12))
-                        .foregroundColor(.white.opacity(0.4))
-                }
+        VStack(alignment: .center, spacing: 4) {
+            HStack {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 8))
+                    .foregroundColor(goldColor)
+                Text(data?.locationName ?? "—")
+                    .font(.custom("Georgia", size: 9))
+                    .foregroundColor(.white.opacity(0.7))
+                    .lineLimit(1)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+
+            Spacer()
+
+            if let p = next {
+                Image(systemName: p.iconName)
+                    .font(.system(size: 22))
+                    .foregroundStyle(
+                        LinearGradient(colors: [goldLight, goldDark], startPoint: .top, endPoint: .bottom)
+                    )
+                    .shadow(color: goldColor.opacity(0.5), radius: 6)
+
+                Text(p.name)
+                    .font(.custom("Georgia-Bold", size: 15))
+                    .foregroundColor(.white)
+
+                Text(p.arabicName)
+                    .font(.custom("Georgia", size: 10))
+                    .foregroundColor(goldColor.opacity(0.7))
+
+                Text(p.timeString)
+                    .font(.system(size: 20, weight: .thin))
+                    .foregroundStyle(
+                        LinearGradient(colors: [goldLight, goldDark], startPoint: .leading, endPoint: .trailing)
+                    )
+
+                Label("Next", systemImage: "arrow.right.circle.fill")
+                    .font(.system(size: 9))
+                    .foregroundColor(goldColor.opacity(0.8))
+            } else {
+                Image(systemName: "moon.stars.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(goldColor.opacity(0.5))
+                Text("Loading...")
+                    .font(.custom("Georgia-Italic", size: 12))
+                    .foregroundColor(.white.opacity(0.4))
+            }
+
+            Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 }
 
@@ -142,48 +161,39 @@ struct MediumWidgetView: View {
     let data: WidgetPrayerData?
 
     var body: some View {
-        ZStack {
-            Color(red: 0.039, green: 0.055, blue: 0.102)
+        VStack(alignment: .center, spacing: 0) {
+            // Header
+            HStack {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 9))
+                    .foregroundColor(goldColor)
+                Text(data?.locationName ?? "—")
+                    .font(.custom("Georgia", size: 10))
+                    .foregroundColor(.white.opacity(0.7))
+                Spacer()
+                Text("Salat Times")
+                    .font(.custom("Georgia-Italic", size: 10))
+                    .foregroundColor(goldColor.opacity(0.7))
+            }
+            .padding(.bottom, 8)
 
-            LinearGradient(
-                colors: [Color(red: 0.1, green: 0.14, blue: 0.27).opacity(0.8), .clear],
-                startPoint: .top, endPoint: .bottom
-            )
-
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                HStack {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 9))
-                        .foregroundColor(goldColor)
-                    Text(data?.locationName ?? "—")
-                        .font(.custom("Georgia", size: 10))
-                        .foregroundColor(.white.opacity(0.7))
-                    Spacer()
-                    Text("Salat Times")
-                        .font(.custom("Georgia-Italic", size: 10))
-                        .foregroundColor(goldColor.opacity(0.7))
-                }
-                .padding(.bottom, 8)
-
-                // Two columns
-                let prayers = data?.prayers ?? []
-                let half = prayers.count / 2
-                HStack(alignment: .top, spacing: 8) {
-                    VStack(spacing: 5) {
-                        ForEach(prayers.prefix(half)) { p in
-                            PrayerMiniRow(prayer: p)
-                        }
+            // Two columns
+            let prayers = data?.prayers ?? []
+            let half = prayers.count / 2
+            HStack(alignment: .center, spacing: 8) {
+                VStack(spacing: 5) {
+                    ForEach(prayers.prefix(half)) { p in
+                        PrayerMiniRow(prayer: p)
                     }
-                    VStack(spacing: 5) {
-                        ForEach(prayers.suffix(from: half)) { p in
-                            PrayerMiniRow(prayer: p)
-                        }
+                }
+                VStack(spacing: 5) {
+                    ForEach(prayers.suffix(from: half)) { p in
+                        PrayerMiniRow(prayer: p)
                     }
                 }
             }
-            .padding(14)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 }
 
@@ -236,7 +246,17 @@ struct SalatTimesWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: SalatProvider()) { entry in
             SalatWidgetEntryView(entry: entry)
-                .containerBackground(.clear, for: .widget)
+                .containerBackground(for: .widget) {
+                    // The container background is the only layer that fills the
+                    // widget edge-to-edge; content views are inset by system margins.
+                    ZStack {
+                        Color(red: 0.039, green: 0.055, blue: 0.102)  // #0A0E1A
+                        LinearGradient(
+                            colors: [Color(red: 0.1, green: 0.14, blue: 0.27).opacity(0.85), .clear],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    }
+                }
         }
         .configurationDisplayName("Salat Times")
         .description("Prayer times at a glance.")
