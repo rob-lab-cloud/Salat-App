@@ -24,6 +24,8 @@
     </array>
     <key>CFBundleDisplayName</key>
     <string>Salat Times</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
     <key>BGTaskSchedulerPermittedIdentifiers</key>
     <array>
         <string>com.salatimes.app.refresh</string>
