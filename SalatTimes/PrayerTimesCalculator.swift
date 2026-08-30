@@ -74,17 +74,35 @@ struct PrayerTime: Identifiable {
     var isCurrent: Bool = false
     
     var timeString: String {
-        let fmt = Self.cachedFormatter
+        let fmt = TimeFormatPreference.use24Hour ? Self.formatter24 : Self.formatter12
         fmt.timeZone = timeZone
         return fmt.string(from: time)
     }
 
-    private static let cachedFormatter: DateFormatter = {
+    private static let formatter12: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "h:mm a"
         f.locale = Locale(identifier: "en_US_POSIX")
         return f
     }()
+
+    private static let formatter24: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+}
+
+// MARK: - Time Format Preference
+// Read wherever times are rendered; changing it requires refreshPrayerTimes()
+// so the list, widget data, and notification bodies are re-rendered.
+enum TimeFormatPreference {
+    static let key = "use24HourTime"
+    static var use24Hour: Bool {
+        get { UserDefaults.standard.bool(forKey: key) }
+        set { UserDefaults.standard.set(newValue, forKey: key) }
+    }
 }
 
 // MARK: - Calculator

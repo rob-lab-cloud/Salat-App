@@ -361,7 +361,8 @@ struct SettingsView: View {
                         CalculationMethodSection(viewModel: viewModel)
                     } else {
                         NotificationsSection(notificationManager: viewModel.notificationManager,
-                                             prayerTimes: viewModel.prayerTimes)
+                                             prayerTimes: viewModel.prayerTimes,
+                                             onAuthorized: { viewModel.refreshPrayerTimes() })
                     }
                 }
             }
@@ -408,6 +409,19 @@ struct CalculationMethodSection: View {
             }
 
             Section {
+                Picker("Time Format", selection: $viewModel.use24HourTime) {
+                    Text("AM/PM").tag(false)
+                    Text("24-Hour").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .listRowBackground(Color.white.opacity(0.06))
+            } header: {
+                Text("Time Format")
+                    .font(.custom("Georgia-Italic", size: 13))
+                    .foregroundColor(Color(hex: "D4AF37").opacity(0.8)).textCase(nil)
+            }
+
+            Section {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "info.circle").foregroundColor(Color(hex: "D4AF37").opacity(0.7))
                     Text("Prayer times are calculated from your GPS location using astronomical formulas. No internet required.")
@@ -424,6 +438,9 @@ struct CalculationMethodSection: View {
 struct NotificationsSection: View {
     @ObservedObject var notificationManager: NotificationManager
     let prayerTimes: [PrayerTime]
+    // Called when the user grants notification permission, so prayer times
+    // are rescheduled immediately rather than at the next natural refresh.
+    var onAuthorized: () -> Void = {}
 
     var actionablePrayers: [PrayerTime] {
         prayerTimes.filter { $0.prayer != .sunrise }
@@ -435,9 +452,8 @@ struct NotificationsSection: View {
             if !notificationManager.isAuthorized {
                 Section {
                     Button(action: {
-                        notificationManager.requestAuthorization()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            notificationManager.checkAuthorization()
+                        notificationManager.requestAuthorization { granted in
+                            if granted { onAuthorized() }
                         }
                     }) {
                         HStack(spacing: 12) {

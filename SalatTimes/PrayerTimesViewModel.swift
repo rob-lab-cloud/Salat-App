@@ -17,6 +17,14 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
             UserDefaults.standard.set(selectedMethod.rawValue, forKey: Self.methodKey)
         }
     }
+    @Published var use24HourTime: Bool = TimeFormatPreference.use24Hour {
+        didSet {
+            TimeFormatPreference.use24Hour = use24HourTime
+            // Re-render list/hero, re-save widget data, reschedule notifications
+            // so every rendered time string picks up the new format.
+            refreshPrayerTimes()
+        }
+    }
     @Published var timeUntilNext: String = ""
     @Published var currentDate: Date = Date()
     @Published var userCoordinate: CLLocationCoordinate2D? = nil

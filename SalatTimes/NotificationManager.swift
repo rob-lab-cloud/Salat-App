@@ -29,9 +29,12 @@ class NotificationManager: ObservableObject {
     }
 
     // MARK: - Authorization
-    func requestAuthorization() {
+    func requestAuthorization(completion: ((Bool) -> Void)? = nil) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
-            Task { @MainActor in self.isAuthorized = granted }
+            Task { @MainActor in
+                self.isAuthorized = granted
+                completion?(granted)
+            }
         }
     }
 
@@ -119,6 +122,9 @@ class NotificationManager: ObservableObject {
             content.sound = .default
         }
         content.categoryIdentifier = "PRAYER_REMINDER"
+        // Prayer times are time-critical: break through Focus modes and
+        // scheduled summaries (requires the time-sensitive entitlement).
+        content.interruptionLevel = .timeSensitive
 
         // Fire time
         let fireDate = prayerTime.time.addingTimeInterval(TimeInterval(-minutesBefore * 60))
