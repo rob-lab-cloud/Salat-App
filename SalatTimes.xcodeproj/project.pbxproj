@@ -21,6 +21,8 @@
 		A1000007 /* SalatTimesWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008 /* SalatTimesWidget.swift */; };
 		A1000008 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000009 /* WidgetKit.framework */; };
 		A1000009 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000010 /* SwiftUI.framework */; };
+		A1000010 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A2000011 /* PrivacyInfo.xcprivacy */; };
+		A1000011 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A2000012 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,6 +81,8 @@
 		A2000010 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SwiftUI.framework; sourceTree = SDKROOT; };
 		A3000001 /* SalatTimes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SalatTimes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3000002 /* SalatTimesWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SalatTimesWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000011 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A2000012 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +129,7 @@
 				A2000007 /* NotificationManager.swift */,
 				A2000005 /* Info.plist */,
 				6209CAD52FD31AE000460A77 /* SharedModels.swift */,
+				A2000011 /* PrivacyInfo.xcprivacy */,
 			);
 			path = SalatTimes;
 			sourceTree = "<group>";
@@ -143,6 +148,7 @@
 			children = (
 				62DECF9230419FDC00902ABD /* SalatTimesWidget.entitlements */,
 				A2000008 /* SalatTimesWidget.swift */,
+				A2000012 /* PrivacyInfo.xcprivacy */,
 			);
 			path = SalatTimesWidget;
 			sourceTree = "<group>";
@@ -241,6 +247,7 @@
 			files = (
 				624561572F51BB010025BDD6 /* Assets.xcassets in Resources */,
 				62DECF9030419DA200902ABD /* adhan.caf in Resources */,
+				A1000010 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,6 +255,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1000011 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -416,7 +424,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -442,7 +450,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -469,7 +477,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -496,7 +504,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

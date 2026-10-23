@@ -33,3 +33,7 @@ fastlane/test_output
 # Misc
 *.swp
 *.log
+
+# Large source audio (not bundled; adhan.caf is the bundled copy)
+*_adhan.caf
+!SalatTimes/adhan.caf

@@ -59,15 +59,22 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let method = UserDefaults.standard.string(forKey: calculationMethodKey)
             .flatMap(CalculationMethod.init(rawValue:)) ?? .muslimWorldLeague
         let now = Date()
+        let school = AsrSchool.saved
+
+        task.expirationHandler = {
+            task.setTaskCompleted(success: false)
+        }
 
         let window = PrayerTimesCalculator.calculateWindow(
             days: 7, from: now,
-            coordinate: saved.coordinate, method: method, timeZone: saved.timeZone
+            coordinate: saved.coordinate, method: method,
+            asrSchool: school, timeZone: saved.timeZone
         )
 
         // Keep the widget's data fresh too while we're here.
         var today = PrayerTimesCalculator.calculate(
-            for: now, coordinate: saved.coordinate, method: method, timeZone: saved.timeZone
+            for: now, coordinate: saved.coordinate, method: method,
+            asrSchool: school, timeZone: saved.timeZone
         )
         if let idx = today.firstIndex(where: { $0.prayer != .sunrise && $0.time > now }) {
             today[idx].isNext = true
@@ -77,9 +84,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         }
         saveWidgetData(locationName: saved.locationName, prayerTimes: today)
 
-        task.expirationHandler = {
-            task.setTaskCompleted(success: false)
-        }
         NotificationManager.shared.scheduleNotifications(for: window) {
             task.setTaskCompleted(success: true)
         }

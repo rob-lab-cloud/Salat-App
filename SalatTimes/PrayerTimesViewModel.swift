@@ -17,6 +17,12 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
             UserDefaults.standard.set(selectedMethod.rawValue, forKey: Self.methodKey)
         }
     }
+    @Published var asrSchool: AsrSchool = AsrSchool.saved {
+        didSet {
+            AsrSchool.saved = asrSchool
+            refreshPrayerTimes()
+        }
+    }
     @Published var use24HourTime: Bool = TimeFormatPreference.use24Hour {
         didSet {
             TimeFormatPreference.use24Hour = use24HourTime
@@ -68,7 +74,8 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
         let now = Date()
 
         var todayTimes = PrayerTimesCalculator.calculate(
-            for: now, coordinate: location, method: selectedMethod, timeZone: userTimeZone
+            for: now, coordinate: location, method: selectedMethod,
+            asrSchool: asrSchool, timeZone: userTimeZone
         )
 
         // Build a multi-day window so notifications and the hero "next prayer"
@@ -77,7 +84,8 @@ class PrayerTimesViewModel: NSObject, ObservableObject {
         allTimes += PrayerTimesCalculator.calculateWindow(
             days: 6,
             from: Calendar.current.date(byAdding: .day, value: 1, to: now) ?? now,
-            coordinate: location, method: selectedMethod, timeZone: userTimeZone
+            coordinate: location, method: selectedMethod,
+            asrSchool: asrSchool, timeZone: userTimeZone
         )
 
         // Persist the location so the background refresh task can reschedule

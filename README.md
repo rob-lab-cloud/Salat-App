@@ -6,7 +6,7 @@ A beautiful, minimal iOS app that calculates Islamic prayer times based on your 
 - 📍 **Automatic geolocation** — prayer times update based on where you are
 - ⏱ **Live countdown** to the next prayer (updates every second)
 - 🌙 **Current/Next prayer** highlighting with clear visual indicators
-- 📐 **5 calculation methods** — Muslim World League, Egyptian, Karachi, ISNA, MWL Europe
+- 📐 **8 calculation methods** + Hanafi/Standard Asr — MWL, Egyptian, Karachi, ISNA, Umm al-Qura, Diyanet, Singapore/Malaysia/Indonesia, France (UOIF); angle-based high-latitude rule for summer Fajr/Isha
 - 🎨 **Dark, elegant UI** with gold accents and Islamic geometric patterns
 - 🌏 **Reverse geocoding** — shows your city name
 - 🧭 **Qibla compass** — animated needle pointing toward the Kaaba
@@ -37,7 +37,6 @@ The app features:
 ### Permissions
 The app requests the following permissions:
 - **Location (When In Use)** — to calculate prayer times and Qibla direction for your area. Set in `Info.plist` as `NSLocationWhenInUseUsageDescription`.
-- **Motion** — for the Qibla compass needle. Set in `Info.plist` as `NSMotionUsageDescription`.
 - **Notifications** — for prayer reminders. Requested at runtime from Settings → Reminders.
 
 ## Calculation Methods
@@ -47,7 +46,10 @@ The app requests the following permissions:
 | Egyptian General Authority | 19.5° | 17.5° | Africa, Middle East |
 | Univ. of Islamic Sciences, Karachi | 18° | 18° | South/Central Asia |
 | ISNA | 15° | 15° | North America |
-| MWL Europe | 12° | 12° | High-latitude Europe |
+| Umm al-Qura (Makkah) | 18.5° | 90 min after Maghrib | Saudi Arabia |
+| Diyanet (Turkey) | 18° | 17° | Turkey (with Diyanet safety offsets) |
+| Singapore / Malaysia / Indonesia | 20° | 18° | Southeast Asia |
+| France (UOIF) | 12° | 12° | France / Europe |
 
 ## File Structure
 ```
@@ -66,13 +68,12 @@ SalatTimes/
 ## Customization
 - **Default method**: Change `selectedMethod` default in `PrayerTimesViewModel`
 - **Colors**: All colors use the `Color(hex:)` extension in `ContentView.swift`
-- **Asr method**: Change `factor: 1` to `factor: 2` in `asrTime()` for Hanafi madhab
+- **Asr school**: Settings → Calculation → Asr Calculation (Standard or Hanafi)
 
 ## Potential Enhancements
 Ideas for future versions, in rough order of user value:
 
 - **Hijri date** in the header — one-liner with `Calendar(identifier: .islamicUmmAlQura)`
-- **Hanafi Asr option** — the Asr shadow factor is currently hardcoded to 1 (Shafi'i); Hanafi users expect factor 2. A settings toggle away.
 - **Lock-screen widgets** (`.accessoryRectangular` / `.accessoryCircular`) — cheap to add now that the widget pipeline works
 - **Prayer-aware meeting/focus widget** — surface upcoming prayer times around meetings/focus sessions so scheduling can avoid them
 
@@ -86,7 +87,7 @@ MIT — free to use, modify, and distribute.
 ### 🧭 Qibla Compass
 - Compact animated compass in the top-left of the header, right next to the location
 - Gold needle always points toward the Kaaba in Mecca
-- Uses `CMMotionManager` (device motion / magnetometer) for smooth live rotation
+- Uses Core Location heading for live rotation
 - No API needed — pure astronomical bearing calculation
 
 ### 🔔 Prayer Reminders & Adhan Notifications

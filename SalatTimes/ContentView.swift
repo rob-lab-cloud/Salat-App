@@ -409,6 +409,25 @@ struct CalculationMethodSection: View {
             }
 
             Section {
+                ForEach(AsrSchool.allCases, id: \.self) { school in
+                    Button(action: { viewModel.asrSchool = school }) {
+                        HStack {
+                            Text(school.rawValue).font(.custom("Georgia", size: 15)).foregroundColor(.white.opacity(0.85))
+                            Spacer()
+                            if viewModel.asrSchool == school {
+                                Image(systemName: "checkmark.circle.fill").foregroundColor(Color(hex: "D4AF37"))
+                            }
+                        }
+                    }
+                    .listRowBackground(Color.white.opacity(0.06))
+                }
+            } header: {
+                Text("Asr Calculation")
+                    .font(.custom("Georgia-Italic", size: 13))
+                    .foregroundColor(Color(hex: "D4AF37").opacity(0.8)).textCase(nil)
+            }
+
+            Section {
                 Picker("Time Format", selection: $viewModel.use24HourTime) {
                     Text("AM/PM").tag(false)
                     Text("24-Hour").tag(true)
@@ -424,7 +443,7 @@ struct CalculationMethodSection: View {
             Section {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "info.circle").foregroundColor(Color(hex: "D4AF37").opacity(0.7))
-                    Text("Prayer times are calculated from your GPS location using astronomical formulas. No internet required.")
+                    Text("Prayer times are calculated on your device from your location using astronomical formulas. Where the sun never reaches the twilight angle in summer, Fajr and Isha use the angle-based high-latitude rule. Times are estimates; confirm with your local mosque if in doubt.")
                         .font(.custom("Georgia-Italic", size: 13)).foregroundColor(.white.opacity(0.5))
                 }
                 .listRowBackground(Color.white.opacity(0.04))
