@@ -74,7 +74,7 @@ prayer,salat,salah,adhan,azan,qibla,muslim,islam,namaz,fajr,maghrib,ramadan,mosq
 ## URLs
 
 - **Support URL:** https://github.com/rob-lab-cloud/Salat-App
-- **Privacy Policy URL:** https://rob-lab-cloud.github.io/Salat-App/
+- **Privacy Policy URL:** https://rob-lab-cloud.github.io/salat-privacy/
 
 ## App Privacy questionnaire
 
